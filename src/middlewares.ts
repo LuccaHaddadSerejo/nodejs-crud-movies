@@ -7,12 +7,7 @@ const checkUniqueMovie = async (
   res: Response,
   next: NextFunction
 ): Promise<Response | void> => {
-  const queryString: string = `
-    SELECT 
-        *
-    FROM
-        movies
-    `;
+  const queryString: string = `SELECT * FROM movies`;
 
   const queryResult = await client.query(queryString);
 

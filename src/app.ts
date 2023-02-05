@@ -4,6 +4,7 @@ import { createMovie, getAllMovies } from "./logic";
 import { checkDescription, checkUniqueMovie } from "./middlewares";
 
 const app: Application = express();
+
 app.use(express.json());
 
 app.post("/movies", checkUniqueMovie, checkDescription, createMovie);

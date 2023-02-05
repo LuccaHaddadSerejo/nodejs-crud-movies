@@ -14,4 +14,11 @@ interface iMovie extends iReqMovie {
 type movieCreate = Omit<iMovie, "id">;
 type movieResult = QueryResult<iMovie>;
 
-export { iReqMovie, iMovie, movieCreate, movieResult };
+interface iPaginationMoviesRes {
+  previousPage: string | null;
+  nextPage: string | null;
+  count: number;
+  data: iMovie[];
+}
+
+export { iReqMovie, iMovie, movieCreate, movieResult, iPaginationMoviesRes };

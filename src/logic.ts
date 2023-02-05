@@ -33,21 +33,22 @@ const getAllMovies = async (req: Request, res: Response): Promise<Response> => {
 
   const checkPageValue = (param: any) => {
     if (param === undefined || param <= 0) {
-      return 1;
+      return 0;
     } else {
       return param;
     }
   };
 
   const perPage: any = checkPerPageValue(req.query.perPage);
-  let page: any = checkPageValue(req.query.page);
+  const page: any = checkPageValue(req.query.page);
+  const offset = page * perPage;
 
   const queryString: string = `SELECT * FROM movies LIMIT $1 OFFSET $2`;
   const queryCount: string = `SELECT COUNT(*) FROM movies`;
 
   const queryConfig: QueryConfig = {
     text: queryString,
-    values: [perPage, page],
+    values: [perPage, offset],
   };
 
   const queryResult: movieResult = await client.query(queryConfig);
@@ -58,10 +59,10 @@ const getAllMovies = async (req: Request, res: Response): Promise<Response> => {
   const nextPage: string = +req.query.page! + 1 + "";
 
   const getUrl = req.get("host");
-  const itensRetrieved = queryResult.rows.length + (page * perPage - 1);
+  const itensRetrieved = queryResult.rows.length + offset;
   const databaseItensCount = queryCountResult.rows[0].count;
-  page = page * perPage;
-
+  console.log(itensRetrieved);
+  console.log(databaseItensCount);
   const treatedResult: iPaginationMoviesRes = {
     previousPage:
       page === undefined || 1

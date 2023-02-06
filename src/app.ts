@@ -2,19 +2,19 @@ import express, { Application } from "express";
 import { startDatabase } from "./database";
 import { createMovie, deleteMovie, getAllMovies, patchMovie } from "./logic";
 import {
-  checkDescription,
-  checkIfMovieExist,
-  checkUniqueMovie,
+  checkDescriptionValue,
+  checkIfMovieExists,
+  checkMovieName,
 } from "./middlewares";
 
 const app: Application = express();
 
 app.use(express.json());
 
-app.post("/movies", checkUniqueMovie, checkDescription, createMovie);
+app.post("/movies", checkMovieName, checkDescriptionValue, createMovie);
 app.get("/movies", getAllMovies);
-app.delete("/movies/:id", checkIfMovieExist, deleteMovie);
-app.patch("/movies/:id", checkIfMovieExist, checkUniqueMovie, patchMovie);
+app.delete("/movies/:id", checkIfMovieExists, deleteMovie);
+app.patch("/movies/:id", checkIfMovieExists, checkMovieName, patchMovie);
 
 app.listen(3000, async () => {
   await startDatabase();

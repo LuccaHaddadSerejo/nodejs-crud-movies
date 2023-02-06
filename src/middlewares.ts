@@ -1,8 +1,8 @@
 import { NextFunction, Request, Response } from "express";
 import { client } from "./database";
-import { iMovie, iReqMovie, movieCreate } from "./interfaces";
+import { iMovie, iReqMovie, createdMovie } from "./types";
 
-const checkIfMovieExist = async (
+const checkIfMovieExists = async (
   req: Request,
   res: Response,
   next: NextFunction
@@ -11,18 +11,20 @@ const checkIfMovieExist = async (
   const queryResult = await client.query(queryString);
   const movies = queryResult.rows;
 
-  const validationResult: movieCreate | undefined = movies.find(
+  const validationResult: createdMovie | undefined = movies.find(
     (movie: iMovie) => movie.id === +req.params.id
   );
 
   if (validationResult === undefined) {
-    return res.status(404).json({ message: "Movie dont exist" });
+    return res
+      .status(404)
+      .json({ message: "The movie you are looking for does not exists" });
   }
 
   return next();
 };
 
-const checkUniqueMovie = async (
+const checkMovieName = async (
   req: Request,
   res: Response,
   next: NextFunction
@@ -31,9 +33,9 @@ const checkUniqueMovie = async (
 
   const queryResult = await client.query(queryString);
 
-  const checkIfMovieAlreadyExists = (): movieCreate | undefined => {
+  const checkIfMovieAlreadyExists = (): createdMovie | undefined => {
     const movies = queryResult.rows;
-    const validationResult: movieCreate | undefined = movies.find(
+    const validationResult: createdMovie | undefined = movies.find(
       (movie: iMovie) => movie.name === req.body.name
     );
 
@@ -41,13 +43,13 @@ const checkUniqueMovie = async (
   };
 
   if (checkIfMovieAlreadyExists() !== undefined) {
-    return res.status(409).json({ message: "Movie already exist" });
+    return res.status(409).json({ message: "This movie already exists" });
   }
 
   return next();
 };
 
-const checkDescription = async (
+const checkDescriptionValue = async (
   req: Request,
   res: Response,
   next: NextFunction
@@ -57,16 +59,16 @@ const checkDescription = async (
   const checkIfDescriptionExists: number =
     Object.keys(movieReq).indexOf("description");
 
-  const formatMovieData = (): movieCreate => {
+  const formatMovieData = (): createdMovie => {
     let dataRes = null;
 
     if (checkIfDescriptionExists !== -1) {
-      const deposit: movieCreate = {
+      const deposit: createdMovie = {
         ...movieReq,
       };
       dataRes = deposit;
     } else {
-      const deposit: movieCreate = {
+      const deposit: createdMovie = {
         ...movieReq,
         description: null,
       };
@@ -82,4 +84,4 @@ const checkDescription = async (
   return next();
 };
 
-export { checkUniqueMovie, checkDescription, checkIfMovieExist };
+export { checkMovieName, checkDescriptionValue, checkIfMovieExists };

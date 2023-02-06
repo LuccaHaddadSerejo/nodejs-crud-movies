@@ -1,18 +1,20 @@
-import { query, Request, Response } from "express";
+import { Request, Response } from "express";
 import { QueryConfig } from "pg";
-import format, { config } from "pg-format";
+import format from "pg-format";
 import { client } from "./database";
-import { iMovie, movieResult, iPaginationMoviesRes } from "./interfaces";
+import { iMovie, movieResult, iCompleteRes } from "./types";
 
 const createMovie = async (req: Request, res: Response): Promise<Response> => {
+  const dataKeys = Object.keys(req.movies.movieData);
+  const dataValues = Object.values(req.movies.movieData);
   const queryString: string = format(
     `
-        INSERT INTO movies (%I)
-        VALUES (%L)
-        RETURNING *;
+      INSERT INTO movies (%I)
+      VALUES (%L)
+      RETURNING *;
     `,
-    Object.keys(req.movies.movieData),
-    Object.values(req.movies.movieData)
+    dataKeys,
+    dataValues
   );
 
   const queryResult: movieResult = await client.query(queryString);
@@ -45,9 +47,10 @@ const getAllMovies = async (req: Request, res: Response): Promise<Response> => {
   let queryString: string = "";
   if (sort === undefined || sortOptions.includes(sort) === false) {
     queryString = format(
-      `SELECT * FROM movies
-       LIMIT %s 
-       OFFSET %s;
+      `
+      SELECT * FROM movies
+      LIMIT (%s) 
+      OFFSET (%s);
       `,
       perPage,
       offset
@@ -57,10 +60,11 @@ const getAllMovies = async (req: Request, res: Response): Promise<Response> => {
     orderOptions.includes(order) === false
   ) {
     queryString = format(
-      `SELECT * FROM movies
+      `
+      SELECT * FROM movies
       ORDER BY %s ASC
-      LIMIT %s 
-      OFFSET %s;
+      LIMIT (%s) 
+      OFFSET (%s);
       `,
       sort,
       perPage,
@@ -68,10 +72,11 @@ const getAllMovies = async (req: Request, res: Response): Promise<Response> => {
     );
   } else {
     queryString = format(
-      `SELECT * FROM movies
-       ORDER BY %s %s
-       LIMIT %s 
-       OFFSET %s;
+      `
+      SELECT * FROM movies
+      ORDER BY %s %s
+      LIMIT (%s) 
+      OFFSET (%s);
       `,
       sort,
       order,
@@ -91,41 +96,39 @@ const getAllMovies = async (req: Request, res: Response): Promise<Response> => {
     : 1;
 
   const getUrl: string | undefined = req.get("host");
-  const itensRetrieved: number = queryStringResult.rows.length + offset;
-  const databaseItensCount: number = queryCountResult.rows[0].count;
+  const rowsRetrieved: number = queryStringResult.rows.length + offset;
+  const databaseRowsCount: number = queryCountResult.rows[0].count;
 
-  const treatedResult: iPaginationMoviesRes = {
+  const completeResult: iCompleteRes = {
     previousPage:
       page === undefined || page === 0
         ? null
         : `${getUrl}/movies?page=${previousPage}&perPage=${perPage}`,
     nextPage:
-      databaseItensCount <= itensRetrieved
+      databaseRowsCount <= rowsRetrieved
         ? null
         : `${getUrl}/movies?page=${nextPage}&perPage=${perPage}`,
     count: queryStringResult.rowCount,
     data: queryStringResult.rows,
   };
 
-  return res.status(200).json(treatedResult);
+  return res.status(200).json(completeResult);
 };
 
 const patchMovie = async (req: Request, res: Response): Promise<Response> => {
   const id: number = +req.params.id;
-  const data = Object.values(req.body);
-  const keys = Object.keys(req.body);
+  const dataKeys = Object.keys(req.body);
+  const dataValues = Object.values(req.body);
 
   const queryString: string = format(
     `
-      UPDATE
-        movies
-      SET (%I) = ROW(%L)
-      WHERE
-        id = $1
-      RETURNING *;
-  `,
-    keys,
-    data,
+    UPDATE movies
+    SET (%I) = ROW(%L)
+    WHERE id = $1
+    RETURNING *;
+    `,
+    dataKeys,
+    dataValues,
     id
   );
 
@@ -141,9 +144,9 @@ const patchMovie = async (req: Request, res: Response): Promise<Response> => {
 
 const deleteMovie = async (req: Request, res: Response): Promise<Response> => {
   const id = req.params.id;
-  const querString = `DELETE FROM movies WHERE id = %s RETURNING *;`;
+  const queryString = `DELETE FROM movies WHERE id = $1 RETURNING *;`;
   const queryConfig: QueryConfig = {
-    text: querString,
+    text: queryString,
     values: [id],
   };
   await client.query(queryConfig);

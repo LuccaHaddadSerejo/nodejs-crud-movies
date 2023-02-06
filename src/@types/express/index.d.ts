@@ -1,5 +1,5 @@
 import * as express from "express";
-import { movieCreate } from "../../interfaces";
+import { movieCreate } from "../../types";
 import { iHandledList, iListData } from "../../types";
 
 declare global {

@@ -12,7 +12,7 @@ const checkIfMovieExist = async (
   const movies = queryResult.rows;
 
   const validationResult: movieCreate | undefined = movies.find(
-    (movie: iMovie) => movie.name === req.body.name
+    (movie: iMovie) => movie.id === +req.params.id
   );
 
   if (validationResult === undefined) {

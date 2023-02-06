@@ -1,5 +1,6 @@
-import { Request, Response } from "express";
-import format from "pg-format";
+import { query, Request, Response } from "express";
+import { QueryConfig } from "pg";
+import format, { config } from "pg-format";
 import { client } from "./database";
 import { iMovie, movieResult, iPaginationMoviesRes } from "./interfaces";
 
@@ -80,7 +81,7 @@ const getAllMovies = async (req: Request, res: Response): Promise<Response> => {
   }
 
   const queryStringResult: movieResult = await client.query(queryString);
-  const queryCountResult: any = await client.query(queryCount);
+  const queryCountResult = await client.query(queryCount);
 
   const previousPage: number | null = !Number.isNaN(+req.query.page!)
     ? +req.query.page! - 1
@@ -109,4 +110,44 @@ const getAllMovies = async (req: Request, res: Response): Promise<Response> => {
   return res.status(200).json(treatedResult);
 };
 
-export { createMovie, getAllMovies };
+const patchMovie = async (req: Request, res: Response): Promise<Response> => {
+  const id: number = +req.params.id;
+  const data = Object.values(req.body);
+  const keys = Object.keys(req.body);
+
+  const queryString: string = format(
+    `
+      UPDATE
+        movies
+      SET (%I) = ROW(%L)
+      WHERE
+        id = $1
+      RETURNING *;
+  `,
+    keys,
+    data,
+    id
+  );
+
+  const queryConfig: QueryConfig = {
+    text: queryString,
+    values: [id],
+  };
+
+  const queryResult: movieResult = await client.query(queryConfig);
+
+  return res.status(200).json(queryResult.rows[0]);
+};
+
+const deleteMovie = async (req: Request, res: Response): Promise<Response> => {
+  const id = req.params.id;
+  const querString = `DELETE FROM movies WHERE id = %s RETURNING *;`;
+  const queryConfig: QueryConfig = {
+    text: querString,
+    values: [id],
+  };
+  await client.query(queryConfig);
+  return res.status(204).json();
+};
+
+export { createMovie, getAllMovies, deleteMovie, patchMovie };

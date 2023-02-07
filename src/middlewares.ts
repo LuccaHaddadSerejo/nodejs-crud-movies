@@ -36,7 +36,8 @@ const checkMovieName = async (
   const checkIfMovieAlreadyExists = (): createdMovie | undefined => {
     const movies = queryResult.rows;
     const validationResult: createdMovie | undefined = movies.find(
-      (movie: iMovie) => movie.name === req.body.name
+      (movie: iMovie) =>
+        movie.name.toLowerCase() === req.body.name.toLowerCase()
     );
 
     return validationResult;

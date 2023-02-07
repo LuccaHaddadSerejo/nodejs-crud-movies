@@ -25,17 +25,40 @@ const createMovie = async (req: Request, res: Response): Promise<Response> => {
 };
 
 const getAllMovies = async (req: Request, res: Response): Promise<Response> => {
-  const perPage: any =
-    req.query.perPage === undefined ||
-    +req.query.perPage > 5 ||
-    +req.query.perPage <= 0
-      ? 5
-      : req.query.perPage;
+  const getPage = () => {
+    let page: number = 1;
+    let requestDeposit: any = undefined;
+    if (req.query.page !== undefined && typeof req.query.page !== typeof 1) {
+      requestDeposit = +req.query.page;
+    }
+    if (Number.isNaN(requestDeposit) || requestDeposit <= 0) {
+      page = 1;
+    } else {
+      page = requestDeposit;
+    }
+    return page;
+  };
 
-  const page: any =
-    req.query.page === undefined || +req.query.page <= 0 ? 0 : req.query.page;
+  const getPerPage = () => {
+    let perPage: number = 5;
+    let requestDeposit: any = undefined;
+    if (
+      req.query.perPage !== undefined &&
+      typeof req.query.perPage !== typeof 5
+    ) {
+      requestDeposit = +req.query.perPage;
+    }
+    if (Number.isNaN(requestDeposit) || requestDeposit <= 0) {
+      perPage = 5;
+    } else {
+      perPage = requestDeposit;
+    }
+    return perPage;
+  };
 
-  const offset: number = page * perPage;
+  const page: number = getPage();
+  const perPage: number = getPerPage();
+  const offset: number = perPage * (page - 1);
 
   const sort: string | undefined = req.query.sort + "";
   const order: string | undefined = req.query.order + "";
@@ -88,12 +111,8 @@ const getAllMovies = async (req: Request, res: Response): Promise<Response> => {
   const queryStringResult: movieResult = await client.query(queryString);
   const queryCountResult = await client.query(queryCount);
 
-  const previousPage: number | null = !Number.isNaN(+req.query.page!)
-    ? +req.query.page! - 1
-    : null;
-  const nextPage: number = !Number.isNaN(+req.query.page!)
-    ? +req.query.page! + 1
-    : 1;
+  const previousPage: number | null = page - 1;
+  const nextPage: number = page + 1;
 
   const getUrl: string | undefined = req.get("host");
   const rowsRetrieved: number = queryStringResult.rows.length + offset;
@@ -101,7 +120,7 @@ const getAllMovies = async (req: Request, res: Response): Promise<Response> => {
 
   const completeResult: iCompleteRes = {
     previousPage:
-      page === undefined || page === 0
+      page === undefined || page === 1
         ? null
         : `${getUrl}/movies?page=${previousPage}&perPage=${perPage}`,
     nextPage:

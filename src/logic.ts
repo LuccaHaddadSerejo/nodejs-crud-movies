@@ -25,7 +25,7 @@ const createMovie = async (req: Request, res: Response): Promise<Response> => {
 };
 
 const getAllMovies = async (req: Request, res: Response): Promise<Response> => {
-  const getPage = () => {
+  const getPage = (): number => {
     let page: number = 1;
     let requestDeposit: any = undefined;
     if (req.query.page !== undefined && typeof req.query.page !== typeof 1) {
@@ -39,7 +39,7 @@ const getAllMovies = async (req: Request, res: Response): Promise<Response> => {
     return page;
   };
 
-  const getPerPage = () => {
+  const getPerPage = (): number => {
     let perPage: number = 5;
     let requestDeposit: any = undefined;
     if (
@@ -56,9 +56,8 @@ const getAllMovies = async (req: Request, res: Response): Promise<Response> => {
     return perPage;
   };
 
-  const page: number = getPage();
-  const perPage: number = getPerPage();
-  const offset: number = perPage * (page - 1);
+  const page = getPage();
+  const perPage = getPerPage();
 
   const sort: string | undefined = req.query.sort + "";
   const order: string | undefined = req.query.order + "";
@@ -76,7 +75,7 @@ const getAllMovies = async (req: Request, res: Response): Promise<Response> => {
       OFFSET (%s);
       `,
       perPage,
-      offset
+      perPage * (page - 1)
     );
   } else if (
     sortOptions.includes(sort) &&
@@ -91,7 +90,7 @@ const getAllMovies = async (req: Request, res: Response): Promise<Response> => {
       `,
       sort,
       perPage,
-      offset
+      perPage * (page - 1)
     );
   } else {
     queryString = format(
@@ -104,29 +103,27 @@ const getAllMovies = async (req: Request, res: Response): Promise<Response> => {
       sort,
       order,
       perPage,
-      offset
+      perPage * (page - 1)
     );
   }
 
   const queryStringResult: movieResult = await client.query(queryString);
   const queryCountResult = await client.query(queryCount);
 
-  const previousPage: number | null = page - 1;
-  const nextPage: number = page + 1;
-
   const getUrl: string | undefined = req.get("host");
-  const rowsRetrieved: number = queryStringResult.rows.length + offset;
+  const rowsRetrieved: number =
+    queryStringResult.rows.length + perPage * (page - 1);
   const databaseRowsCount: number = queryCountResult.rows[0].count;
 
   const completeResult: iCompleteRes = {
     previousPage:
       page === undefined || page === 1
         ? null
-        : `${getUrl}/movies?page=${previousPage}&perPage=${perPage}`,
+        : `${getUrl}/movies?page=${page - 1}&perPage=${perPage}`,
     nextPage:
       databaseRowsCount <= rowsRetrieved
         ? null
-        : `${getUrl}/movies?page=${nextPage}&perPage=${perPage}`,
+        : `${getUrl}/movies?page=${page + 1}&perPage=${perPage}`,
     count: queryStringResult.rowCount,
     data: queryStringResult.rows,
   };

@@ -31,7 +31,11 @@ const getAllMovies = async (req: Request, res: Response): Promise<Response> => {
     if (req.query.page !== undefined && typeof req.query.page !== typeof 1) {
       requestDeposit = +req.query.page;
     }
-    if (Number.isNaN(requestDeposit) || requestDeposit <= 0) {
+    if (
+      Number.isNaN(requestDeposit) ||
+      requestDeposit <= 0 ||
+      requestDeposit === undefined
+    ) {
       page = 1;
     } else {
       page = requestDeposit;
@@ -48,7 +52,11 @@ const getAllMovies = async (req: Request, res: Response): Promise<Response> => {
     ) {
       requestDeposit = +req.query.perPage;
     }
-    if (Number.isNaN(requestDeposit) || requestDeposit <= 0) {
+    if (
+      Number.isNaN(requestDeposit) ||
+      requestDeposit <= 0 ||
+      requestDeposit === undefined
+    ) {
       perPage = 5;
     } else {
       perPage = requestDeposit;
@@ -58,6 +66,8 @@ const getAllMovies = async (req: Request, res: Response): Promise<Response> => {
 
   const page = getPage();
   const perPage = getPerPage();
+  console.log(perPage);
+  console.log(page);
 
   const sort: string | undefined = req.query.sort + "";
   const order: string | undefined = req.query.order + "";

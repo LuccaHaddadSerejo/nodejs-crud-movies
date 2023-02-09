@@ -1,21 +1,23 @@
 import { NextFunction, Request, Response } from "express";
+import { QueryConfig } from "pg";
 import { client } from "./database";
-import { iMovie, iReqMovie, createdMovie } from "./types";
+import { iMovie, iReqMovie, createdMovie, movieResult } from "./types";
 
 const checkIfMovieExists = async (
   req: Request,
   res: Response,
   next: NextFunction
 ): Promise<Response | void> => {
-  const queryString: string = `SELECT * FROM movies`;
-  const queryResult = await client.query(queryString);
-  const movies = queryResult.rows;
+  const queryString: string = `SELECT * FROM movies WHERE id = $1`;
 
-  const validationResult: createdMovie | undefined = movies.find(
-    (movie: iMovie) => movie.id === +req.params.id
-  );
+  const queryConfig: QueryConfig = {
+    text: queryString,
+    values: [+req.params.id],
+  };
+  const queryResult: movieResult = await client.query(queryConfig);
+  const foundMovie: iMovie = queryResult.rows[0];
 
-  if (validationResult === undefined) {
+  if (!foundMovie) {
     return res
       .status(404)
       .json({ message: "The movie you are looking for does not exists" });
@@ -31,19 +33,13 @@ const checkMovieName = async (
 ): Promise<Response | void> => {
   const queryString: string = `SELECT * FROM movies`;
 
-  const queryResult = await client.query(queryString);
+  const queryResult: movieResult = await client.query(queryString);
 
-  const checkIfMovieAlreadyExists = (): createdMovie | undefined => {
-    const movies = queryResult.rows;
-    const validationResult: createdMovie | undefined = movies.find(
-      (movie: iMovie) =>
-        movie.name.toLowerCase() === req.body.name.toLowerCase()
-    );
+  const searchMovie: iMovie | undefined = queryResult.rows.find(
+    (movie) => movie.name.toLowerCase() === req.body.name.toLowerCase()
+  );
 
-    return validationResult;
-  };
-
-  if (checkIfMovieAlreadyExists() !== undefined) {
+  if (searchMovie) {
     return res.status(409).json({ message: "This movie already exists" });
   }
 

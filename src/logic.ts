@@ -9,7 +9,8 @@ const createMovie = async (req: Request, res: Response): Promise<Response> => {
   const dataValues = Object.values(req.movies.movieData);
   const queryString: string = format(
     `
-      INSERT INTO movies (%I)
+      INSERT INTO 
+          movies (%I)
       VALUES (%L)
       RETURNING *;
     `,
@@ -66,8 +67,6 @@ const getAllMovies = async (req: Request, res: Response): Promise<Response> => {
 
   const page = getPage();
   const perPage = getPerPage();
-  console.log(perPage);
-  console.log(page);
 
   const sort: string | undefined = req.query.sort + "";
   const order: string | undefined = req.query.order + "";
@@ -80,9 +79,12 @@ const getAllMovies = async (req: Request, res: Response): Promise<Response> => {
   if (sort === undefined || sortOptions.includes(sort) === false) {
     queryString = format(
       `
-      SELECT * FROM movies
-      LIMIT (%s) 
-      OFFSET (%s);
+      SELECT * FROM 
+          movies
+      LIMIT 
+          (%s) 
+      OFFSET 
+          (%s);
       `,
       perPage,
       perPage * (page - 1)
@@ -93,10 +95,14 @@ const getAllMovies = async (req: Request, res: Response): Promise<Response> => {
   ) {
     queryString = format(
       `
-      SELECT * FROM movies
-      ORDER BY %s ASC
-      LIMIT (%s) 
-      OFFSET (%s);
+      SELECT * FROM 
+          movies
+      ORDER BY 
+          %s ASC
+      LIMIT 
+          (%s) 
+      OFFSET 
+          (%s);
       `,
       sort,
       perPage,
@@ -105,10 +111,14 @@ const getAllMovies = async (req: Request, res: Response): Promise<Response> => {
   } else {
     queryString = format(
       `
-      SELECT * FROM movies
-      ORDER BY %s %s
-      LIMIT (%s) 
-      OFFSET (%s);
+      SELECT * FROM 
+          movies
+      ORDER BY 
+          %s %s
+      LIMIT 
+          (%s) 
+      OFFSET 
+          (%s);
       `,
       sort,
       order,
@@ -148,9 +158,12 @@ const patchMovie = async (req: Request, res: Response): Promise<Response> => {
 
   const queryString: string = format(
     `
-    UPDATE movies
-    SET (%I) = ROW(%L)
-    WHERE id = $1
+    UPDATE 
+        movies
+    SET 
+        (%I) = ROW(%L)
+    WHERE 
+        id = $1
     RETURNING *;
     `,
     dataKeys,
@@ -170,12 +183,21 @@ const patchMovie = async (req: Request, res: Response): Promise<Response> => {
 
 const deleteMovie = async (req: Request, res: Response): Promise<Response> => {
   const id = req.params.id;
-  const queryString = `DELETE FROM movies WHERE id = $1 RETURNING *;`;
+
+  const queryString = `
+  DELETE FROM 
+      movies 
+  WHERE 
+      id = $1 
+  RETURNING *;`;
+
   const queryConfig: QueryConfig = {
     text: queryString,
     values: [id],
   };
+
   await client.query(queryConfig);
+
   return res.status(204).json();
 };
 

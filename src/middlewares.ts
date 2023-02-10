@@ -8,12 +8,19 @@ const checkIfMovieExists = async (
   res: Response,
   next: NextFunction
 ): Promise<Response | void> => {
-  const queryString: string = `SELECT * FROM movies WHERE id = $1`;
+  const queryString: string = `
+    SELECT 
+        * 
+    FROM 
+        movies 
+    WHERE 
+        id = $1`;
 
   const queryConfig: QueryConfig = {
     text: queryString,
     values: [+req.params.id],
   };
+
   const queryResult: movieResult = await client.query(queryConfig);
   const foundMovie: iMovie = queryResult.rows[0];
 
@@ -31,7 +38,11 @@ const checkMovieName = async (
   res: Response,
   next: NextFunction
 ): Promise<Response | void> => {
-  const queryString: string = `SELECT * FROM movies`;
+  const queryString: string = `
+    SELECT 
+        * 
+    FROM 
+        movies`;
 
   const queryResult: movieResult = await client.query(queryString);
 
